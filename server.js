@@ -3,12 +3,13 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(os.tmpdir(), 'iphone-store-data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -93,6 +94,28 @@ function saveStore(store) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
+async function syncLocalStoreFromSupabase() {
+  if (!supabase) {
+    return readStore();
+  }
+
+  try {
+    const remoteProducts = await getProductsFromSupabase();
+    const store = readStore();
+
+    if (!Array.isArray(remoteProducts) || !remoteProducts.length) {
+      return store;
+    }
+
+    store.products = remoteProducts.map((product) => normalizeProduct(product, product.id));
+    saveStore(store);
+    return store;
+  } catch (error) {
+    console.warn('No se pudo sincronizar el stock local con Supabase:', error.message);
+    return readStore();
+  }
+}
+
 async function getProductsFromSupabase() {
   if (!supabase) return null;
 
@@ -145,11 +168,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   session({
-    secret: 'iphone-store-secret',
+    secret: process.env.SESSION_SECRET || 'iphone-store-secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
       maxAge: 1000 * 60 * 60 * 8
     }
   })
@@ -211,8 +236,13 @@ app.get('/api/admin/me', requireAdmin, (req, res) => {
 
 app.get('/api/admin/products', requireAdmin, async (req, res) => {
   try {
-    const products = await getProducts();
-    res.json(products);
+    if (supabase) {
+      const syncedStore = await syncLocalStoreFromSupabase();
+      return res.json(Array.isArray(syncedStore.products) ? syncedStore.products : []);
+    }
+
+    const store = readStore();
+    return res.json(Array.isArray(store.products) ? store.products : []);
   } catch (error) {
     res.status(500).json({ error: 'No se pudo cargar el inventario del administrador.' });
   }
@@ -259,10 +289,15 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, model, color, memory, condition, price, stock, battery, status, image } = req.body || {};
 
-  const store = readStore();
-  const productIndex = store.products.findIndex((item) => item.id === id);
+  let store = readStore();
+  let productIndex = store.products.findIndex((item) => item.id === id);
 
-  if (supabase) {
+  if (supabase && productIndex === -1) {
+    store = await syncLocalStoreFromSupabase();
+    productIndex = store.products.findIndex((item) => item.id === id);
+  }
+
+  if (supabase && productIndex !== -1) {
     try {
       const updatedProduct = normalizeProduct({
         id,
@@ -280,6 +315,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
 
       const { data, error } = await supabase.from('products').update(updatedProduct).eq('id', id).select().single();
       if (error) throw error;
+      await syncLocalStoreFromSupabase();
       return res.json(data || updatedProduct);
     } catch (error) {
       console.warn('No se pudo actualizar en Supabase, usando fallback local:', error.message);
@@ -312,24 +348,30 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
 app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
 
-  if (supabase) {
+  let store = readStore();
+  let productIndex = store.products.findIndex((item) => item.id === id);
+
+  if (supabase && productIndex === -1) {
+    store = await syncLocalStoreFromSupabase();
+    productIndex = store.products.findIndex((item) => item.id === id);
+  }
+
+  if (supabase && productIndex !== -1) {
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
+      await syncLocalStoreFromSupabase();
       return res.json({ ok: true });
     } catch (error) {
       console.warn('No se pudo borrar en Supabase, usando fallback local:', error.message);
     }
   }
 
-  const store = readStore();
-  const originalLength = store.products.length;
-  store.products = store.products.filter((item) => item.id !== id);
-
-  if (store.products.length === originalLength) {
+  if (productIndex === -1) {
     return res.status(404).json({ error: 'Producto no encontrado.' });
   }
 
+  store.products = store.products.filter((item) => item.id !== id);
   saveStore(store);
   res.json({ ok: true });
 });
