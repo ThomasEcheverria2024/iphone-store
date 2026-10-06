@@ -455,8 +455,9 @@ body.intro-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background:
     radial-gradient(circle at 50% 10%, rgba(151, 197, 255, 0.22), transparent 26%),
     linear-gradient(180deg, rgba(3, 6, 14, 0.98), rgba(8, 13, 22, 0.96));
@@ -468,6 +469,9 @@ body.intro-visible {
 .intro-overlay::after {
   content: "";
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   border: 1px solid rgba(143, 196, 255, 0.18);
   border-radius: 50%;
   pointer-events: none;
@@ -485,7 +489,7 @@ body.intro-visible {
   width: min(55vw, 620px);
   height: min(55vw, 620px);
   background: radial-gradient(circle, rgba(168, 160, 255, 0.08), transparent 62%);
-  transform: scale(1.2);
+  transform: translate(-50%, -50%) scale(1.2);
   animation: introOrbit 14s linear infinite reverse;
 }
 
@@ -497,6 +501,7 @@ body.intro-visible {
 
 .intro-panel {
   position: relative;
+  z-index: 1;
   width: min(620px, calc(100% - 40px));
   padding: 30px 30px 22px;
   border-radius: 32px;
@@ -511,6 +516,7 @@ body.intro-visible {
   overflow: hidden;
   transform: perspective(1400px) rotateX(8deg) translateY(0);
   animation: introIn 0.9s cubic-bezier(0.19, 1, 0.22, 1) both;
+  margin: 0 auto;
 }
 
 .intro-panel::before {
