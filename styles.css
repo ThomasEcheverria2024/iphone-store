@@ -223,68 +223,73 @@ nav a:hover {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .product-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(9, 14, 24, 0.9));
   border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 26px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.20);
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .product-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-2px);
   border-color: rgba(141, 217, 255, 0.3);
-  box-shadow: 0 30px 65px rgba(2, 6, 23, 0.76);
 }
 
 .product-image {
-  height: 250px;
+  width: 102px;
+  height: 102px;
   object-fit: cover;
-  width: 100%;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  flex-shrink: 0;
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .product-body {
-  padding: 18px 18px 20px;
+  flex: 1;
+  padding: 12px 14px 12px 0;
 }
 
 .product-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
+  margin-bottom: 5px;
 }
 
 .product-name {
   margin: 0;
-  font-size: 1.4rem;
-  letter-spacing: -0.04em;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
   color: white;
 }
 
 .product-meta {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.78rem;
 }
 
 .product-specs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .product-specs span {
   background: rgba(148, 163, 184, 0.06);
   color: var(--text);
-  padding: 6px 10px;
-  font-size: 0.74rem;
+  padding: 5px 8px;
+  font-size: 0.68rem;
   border-radius: 999px;
   font-weight: 600;
   border: 1px solid rgba(148, 163, 184, 0.14);
@@ -292,13 +297,13 @@ nav a:hover {
 
 .product-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
 }
 
 .price {
-  font-size: 1.8rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: white;
   letter-spacing: -0.04em;
@@ -306,10 +311,11 @@ nav a:hover {
 
 .status-pill {
   border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.74rem;
+  padding: 6px 8px;
+  font-size: 0.68rem;
   font-weight: 700;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 .status-pill.available {
