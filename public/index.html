@@ -11,6 +11,21 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <div id="intro-overlay" class="intro-overlay" aria-live="polite">
+      <div class="intro-panel">
+        <div class="intro-brand">
+          <span class="intro-logo">i</span>
+          <span>iPhone Stock</span>
+        </div>
+        <p class="intro-tag">NEXT GENERATION</p>
+        <h1>Precision in every device.</h1>
+        <p class="intro-copy">Curating premium iPhones with performance, style and battery health.</p>
+        <div class="intro-progress">
+          <span></span>
+        </div>
+      </div>
+    </div>
+
     <header class="topbar">
       <div class="container nav">
         <div class="brand">
@@ -80,5 +95,17 @@
     </main>
 
     <script src="/app.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const overlay = document.getElementById('intro-overlay');
+        if (!overlay) return;
+
+        document.body.classList.add('intro-visible');
+        setTimeout(() => {
+          overlay.classList.add('is-hidden');
+          document.body.classList.remove('intro-visible');
+        }, 2800);
+      });
+    </script>
   </body>
 </html>
