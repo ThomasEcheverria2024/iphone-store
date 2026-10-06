@@ -376,7 +376,11 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor arrancado en http://localhost:${PORT}`);
-  console.log('Credenciales admin por defecto: admin / admin123');
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor arrancado en http://localhost:${PORT}`);
+    console.log('Credenciales admin por defecto: admin / admin123');
+  });
+}
+
+module.exports = app;
