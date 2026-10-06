@@ -94,6 +94,43 @@ function saveStore(store) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
+function mergeProductsWithLocalOverrides(remoteProducts = [], localProducts = []) {
+  const localById = new Map((localProducts || []).map((product) => [String(product.id), product]));
+  const merged = [];
+
+  const remoteList = Array.isArray(remoteProducts) ? remoteProducts : [];
+  const localList = Array.isArray(localProducts) ? localProducts : [];
+
+  for (const product of remoteList) {
+    const normalizedRemote = normalizeProduct(product, product.id);
+    const localProduct = localById.get(String(normalizedRemote.id));
+    merged.push(localProduct ? {
+      ...normalizedRemote,
+      ...localProduct,
+      id: normalizedRemote.id,
+      name: localProduct.name || normalizedRemote.name,
+      model: localProduct.model || normalizedRemote.model,
+      color: localProduct.color || normalizedRemote.color,
+      memory: localProduct.memory || normalizedRemote.memory,
+      condition: localProduct.condition || normalizedRemote.condition,
+      price: localProduct.price ?? normalizedRemote.price,
+      stock: localProduct.stock ?? normalizedRemote.stock,
+      battery: localProduct.battery ?? normalizedRemote.battery,
+      status: localProduct.status || normalizedRemote.status,
+      image: localProduct.image || normalizedRemote.image
+    } : normalizedRemote);
+  }
+
+  for (const product of localList) {
+    const productId = String(product.id);
+    if (!remoteList.some((item) => String(item.id) === productId)) {
+      merged.push(normalizeProduct(product, product.id));
+    }
+  }
+
+  return merged;
+}
+
 async function syncLocalStoreFromSupabase() {
   if (!supabase) {
     return readStore();
@@ -102,12 +139,13 @@ async function syncLocalStoreFromSupabase() {
   try {
     const remoteProducts = await getProductsFromSupabase();
     const store = readStore();
+    const localProducts = Array.isArray(store.products) ? store.products : [];
 
     if (!Array.isArray(remoteProducts) || !remoteProducts.length) {
       return store;
     }
 
-    store.products = remoteProducts.map((product) => normalizeProduct(product, product.id));
+    store.products = mergeProductsWithLocalOverrides(remoteProducts, localProducts);
     saveStore(store);
     return store;
   } catch (error) {
@@ -129,17 +167,29 @@ async function getProductsFromSupabase() {
 }
 
 async function getProducts() {
+  const store = readStore();
+
   try {
     const supabaseProducts = await getProductsFromSupabase();
-    if (supabaseProducts && supabaseProducts.length > 0) {
-      return supabaseProducts;
+    if (Array.isArray(supabaseProducts) && supabaseProducts.length > 0) {
+      return mergeProductsWithLocalOverrides(supabaseProducts, Array.isArray(store.products) ? store.products : []);
     }
   } catch (error) {
     console.warn('Supabase unavailable, using local JSON:', error.message);
   }
 
-  const store = readStore();
   return Array.isArray(store.products) ? store.products : [];
+}
+
+async function supabaseSupportsBattery() {
+  if (!supabase) return false;
+
+  try {
+    const products = await getProductsFromSupabase();
+    return Array.isArray(products) && products.some((product) => Object.prototype.hasOwnProperty.call(product, 'battery'));
+  } catch (error) {
+    return false;
+  }
 }
 
 function parseNumber(rawValue, fallback = 0) {
@@ -269,7 +319,7 @@ app.post('/api/admin/products', requireAdmin, async (req, res) => {
     image
   });
 
-  if (supabase) {
+  if (supabase && (await supabaseSupportsBattery())) {
     try {
       const { data, error } = await supabase.from('products').insert(product).select().single();
       if (error) throw error;
@@ -297,7 +347,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
     productIndex = store.products.findIndex((item) => item.id === id);
   }
 
-  if (supabase && productIndex !== -1) {
+  if (supabase && productIndex !== -1 && (await supabaseSupportsBattery())) {
     try {
       const updatedProduct = normalizeProduct({
         id,
@@ -356,7 +406,7 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
     productIndex = store.products.findIndex((item) => item.id === id);
   }
 
-  if (supabase && productIndex !== -1) {
+  if (supabase && productIndex !== -1 && (await supabaseSupportsBattery())) {
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
