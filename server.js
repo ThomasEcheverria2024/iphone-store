@@ -121,6 +121,21 @@ function parseNumber(rawValue, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function normalizeProduct(product = {}, fallbackId = null) {
+  return {
+    id: product.id || fallbackId || `ip-${Date.now()}`,
+    name: product.name || 'Sin nombre',
+    model: product.model || 'Sin modelo',
+    color: product.color || 'Sin color',
+    memory: product.memory || 'Sin memoria',
+    condition: product.condition || 'Bueno',
+    price: parseNumber(product.price, 0),
+    stock: parseNumber(product.stock, 0),
+    status: product.status || (parseNumber(product.stock, 0) > 0 ? 'Disponible' : 'Sin stock'),
+    image: product.image || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80'
+  };
+}
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
@@ -189,43 +204,80 @@ app.get('/api/admin/me', requireAdmin, (req, res) => {
   res.json({ username: req.session.user.username });
 });
 
-app.get('/api/admin/products', requireAdmin, (req, res) => {
-  const store = readStore();
-  res.json(store.products);
+app.get('/api/admin/products', requireAdmin, async (req, res) => {
+  try {
+    const products = await getProducts();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'No se pudo cargar el inventario del administrador.' });
+  }
 });
 
-app.post('/api/admin/products', requireAdmin, (req, res) => {
+app.post('/api/admin/products', requireAdmin, async (req, res) => {
   const { name, model, color, memory, condition, price, stock, status, image } = req.body || {};
 
   if (!name || !model) {
     return res.status(400).json({ error: 'El nombre y el modelo son obligatorios.' });
   }
 
-  const store = readStore();
-  const product = {
+  const product = normalizeProduct({
     id: `ip-${Date.now()}`,
     name,
     model,
-    color: color || 'Sin color',
-    memory: memory || 'Sin memoria',
-    condition: condition || 'Bueno',
-    price: parseNumber(price, 0),
-    stock: parseNumber(stock, 0),
-    status: status || (parseNumber(stock, 0) > 0 ? 'Disponible' : 'Sin stock'),
-    image: image || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80'
-  };
+    color,
+    memory,
+    condition,
+    price,
+    stock,
+    status,
+    image
+  });
 
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('products').insert(product).select().single();
+      if (error) throw error;
+      return res.status(201).json(data || product);
+    } catch (error) {
+      console.warn('No se pudo guardar en Supabase, usando fallback local:', error.message);
+    }
+  }
+
+  const store = readStore();
   store.products.unshift(product);
   saveStore(store);
-  res.status(201).json(product);
+  return res.status(201).json(product);
 });
 
-app.put('/api/admin/products/:id', requireAdmin, (req, res) => {
+app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, model, color, memory, condition, price, stock, status, image } = req.body || {};
 
   const store = readStore();
   const productIndex = store.products.findIndex((item) => item.id === id);
+
+  if (supabase) {
+    try {
+      const updatedProduct = normalizeProduct({
+        id,
+        name: name || store.products[productIndex]?.name,
+        model: model || store.products[productIndex]?.model,
+        color: color || store.products[productIndex]?.color,
+        memory: memory || store.products[productIndex]?.memory,
+        condition: condition || store.products[productIndex]?.condition,
+        price: price ?? store.products[productIndex]?.price,
+        stock: stock ?? store.products[productIndex]?.stock,
+        status: status || store.products[productIndex]?.status,
+        image: image || store.products[productIndex]?.image
+      }, id);
+
+      const { data, error } = await supabase.from('products').update(updatedProduct).eq('id', id).select().single();
+      if (error) throw error;
+      return res.json(data || updatedProduct);
+    } catch (error) {
+      console.warn('No se pudo actualizar en Supabase, usando fallback local:', error.message);
+    }
+  }
 
   if (productIndex === -1) {
     return res.status(404).json({ error: 'Producto no encontrado.' });
@@ -249,8 +301,19 @@ app.put('/api/admin/products/:id', requireAdmin, (req, res) => {
   res.json(store.products[productIndex]);
 });
 
-app.delete('/api/admin/products/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
+
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+      return res.json({ ok: true });
+    } catch (error) {
+      console.warn('No se pudo borrar en Supabase, usando fallback local:', error.message);
+    }
+  }
+
   const store = readStore();
   const originalLength = store.products.length;
   store.products = store.products.filter((item) => item.id !== id);
