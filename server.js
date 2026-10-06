@@ -1,13 +1,25 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    })
+  : null;
 
 const DEFAULT_PRODUCTS = [
   {
@@ -78,6 +90,32 @@ function saveStore(store) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
 }
 
+async function getProductsFromSupabase() {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.from('products').select('*');
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
+async function getProducts() {
+  try {
+    const supabaseProducts = await getProductsFromSupabase();
+    if (supabaseProducts && supabaseProducts.length > 0) {
+      return supabaseProducts;
+    }
+  } catch (error) {
+    console.warn('Supabase unavailable, using local JSON:', error.message);
+  }
+
+  const store = readStore();
+  return Array.isArray(store.products) ? store.products : [];
+}
+
 function parseNumber(rawValue, fallback = 0) {
   const value = Number(rawValue);
   return Number.isFinite(value) ? value : fallback;
@@ -113,9 +151,13 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.get('/api/products', (req, res) => {
-  const store = readStore();
-  res.json(store.products);
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await getProducts();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'No se pudo cargar el catálogo.' });
+  }
 });
 
 app.post('/api/login', (req, res) => {
