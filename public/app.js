@@ -47,19 +47,27 @@ function sortProducts(products) {
 }
 
 function getVisibleProducts() {
-  const selectedModel = modelFilter.value;
-  const selectedMemory = memoryFilter.value;
-  const selectedBattery = batteryFilter.value;
+  if (!Array.isArray(state.allProducts) || !state.allProducts.length) {
+    return [];
+  }
+
+  const selectedModel = modelFilter ? modelFilter.value : 'all';
+  const selectedMemory = memoryFilter ? memoryFilter.value : 'all';
+  const selectedBattery = batteryFilter ? batteryFilter.value : 'all';
 
   return sortProducts(
     state.allProducts.filter((product) => {
-      const modelMatch = selectedModel === 'all' || String(product.model).toLowerCase() === selectedModel.toLowerCase();
-      const memoryMatch = selectedMemory === 'all' || String(product.memory) === selectedMemory;
+      const productModel = String(product.model || '').trim();
+      const productMemory = String(product.memory || '').trim();
       const battery = Number(product.battery ?? 80);
+      const batteryValue = Number.isFinite(battery) ? battery : 80;
+
+      const modelMatch = selectedModel === 'all' || !productModel || productModel.toLowerCase() === selectedModel.toLowerCase();
+      const memoryMatch = selectedMemory === 'all' || !productMemory || productMemory === selectedMemory;
       let batteryMatch = true;
 
       if (selectedBattery !== 'all') {
-        batteryMatch = battery >= Number(selectedBattery);
+        batteryMatch = batteryValue >= Number(selectedBattery);
       }
 
       return modelMatch && memoryMatch && batteryMatch;
@@ -68,11 +76,18 @@ function getVisibleProducts() {
 }
 
 function populateFilterOptions(products) {
+  if (!Array.isArray(products)) return;
+
   const modelValues = [...new Set(products.map((product) => product.model).filter(Boolean))].sort((a, b) => parseModelRank(a) - parseModelRank(b));
   const memoryValues = [...new Set(products.map((product) => product.memory).filter(Boolean))].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
-  modelFilter.innerHTML = '<option value="all">Todos</option>' + modelValues.map((model) => `<option value="${model}">${model}</option>`).join('');
-  memoryFilter.innerHTML = '<option value="all">Todas</option>' + memoryValues.map((memory) => `<option value="${memory}">${memory}</option>`).join('');
+  if (modelFilter) {
+    modelFilter.innerHTML = '<option value="all">Todos</option>' + modelValues.map((model) => `<option value="${model}">${model}</option>`).join('');
+  }
+
+  if (memoryFilter) {
+    memoryFilter.innerHTML = '<option value="all">Todas</option>' + memoryValues.map((memory) => `<option value="${memory}">${memory}</option>`).join('');
+  }
 }
 
 function renderProducts(products) {
@@ -144,7 +159,7 @@ async function loadProducts() {
   }
 }
 
-[modelFilter, memoryFilter, batteryFilter].forEach((element) => {
+[modelFilter, memoryFilter, batteryFilter].filter(Boolean).forEach((element) => {
   element.addEventListener('change', applyFilters);
 });
 
