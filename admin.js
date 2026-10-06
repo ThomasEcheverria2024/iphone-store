@@ -116,6 +116,7 @@ function fillForm(product) {
   document.getElementById('condition').value = product.condition || '';
   document.getElementById('price').value = product.price || 0;
   document.getElementById('stock').value = product.stock || 0;
+  document.getElementById('battery').value = product.battery ?? 80;
   document.getElementById('status').value = product.status || 'Disponible';
   document.getElementById('image').value = product.image || '';
 
@@ -205,6 +206,7 @@ productForm.addEventListener('submit', async (event) => {
     condition: formData.get('condition'),
     price: Number(formData.get('price')) || 0,
     stock: Number(formData.get('stock')) || 0,
+    battery: Number(formData.get('battery')) || 80,
     status: formData.get('status'),
     image: formData.get('image')
   };

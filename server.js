@@ -31,6 +31,7 @@ const DEFAULT_PRODUCTS = [
     condition: 'Excelente',
     price: 699,
     stock: 3,
+    battery: 92,
     status: 'Disponible',
     image: 'https://images.unsplash.com/photo-1672666635131-9d1d646ce21b?auto=format&fit=crop&w=900&q=80'
   },
@@ -43,6 +44,7 @@ const DEFAULT_PRODUCTS = [
     condition: 'Muy bueno',
     price: 849,
     stock: 2,
+    battery: 88,
     status: 'Disponible',
     image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80'
   },
@@ -55,6 +57,7 @@ const DEFAULT_PRODUCTS = [
     condition: 'Bueno',
     price: 499,
     stock: 0,
+    battery: 71,
     status: 'Sin stock',
     image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80'
   }
@@ -122,6 +125,7 @@ function parseNumber(rawValue, fallback = 0) {
 }
 
 function normalizeProduct(product = {}, fallbackId = null) {
+  const batteryValue = Number(product.battery ?? 80);
   return {
     id: product.id || fallbackId || `ip-${Date.now()}`,
     name: product.name || 'Sin nombre',
@@ -131,6 +135,7 @@ function normalizeProduct(product = {}, fallbackId = null) {
     condition: product.condition || 'Bueno',
     price: parseNumber(product.price, 0),
     stock: parseNumber(product.stock, 0),
+    battery: Number.isFinite(batteryValue) ? Math.min(100, Math.max(0, batteryValue)) : 80,
     status: product.status || (parseNumber(product.stock, 0) > 0 ? 'Disponible' : 'Sin stock'),
     image: product.image || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80'
   };
@@ -214,7 +219,7 @@ app.get('/api/admin/products', requireAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/products', requireAdmin, async (req, res) => {
-  const { name, model, color, memory, condition, price, stock, status, image } = req.body || {};
+  const { name, model, color, memory, condition, price, stock, battery, status, image } = req.body || {};
 
   if (!name || !model) {
     return res.status(400).json({ error: 'El nombre y el modelo son obligatorios.' });
@@ -229,6 +234,7 @@ app.post('/api/admin/products', requireAdmin, async (req, res) => {
     condition,
     price,
     stock,
+    battery,
     status,
     image
   });
@@ -251,7 +257,7 @@ app.post('/api/admin/products', requireAdmin, async (req, res) => {
 
 app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { name, model, color, memory, condition, price, stock, status, image } = req.body || {};
+  const { name, model, color, memory, condition, price, stock, battery, status, image } = req.body || {};
 
   const store = readStore();
   const productIndex = store.products.findIndex((item) => item.id === id);
@@ -267,6 +273,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
         condition: condition || store.products[productIndex]?.condition,
         price: price ?? store.products[productIndex]?.price,
         stock: stock ?? store.products[productIndex]?.stock,
+        battery: battery ?? store.products[productIndex]?.battery ?? 80,
         status: status || store.products[productIndex]?.status,
         image: image || store.products[productIndex]?.image
       }, id);
@@ -293,6 +300,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
     condition: condition || product.condition,
     price: parseNumber(price, product.price),
     stock: parseNumber(stock, product.stock),
+    battery: Number.isFinite(Number(battery)) ? Math.min(100, Math.max(0, Number(battery))) : (Number(product.battery ?? 80)),
     status: status || product.status,
     image: image || product.image
   };
