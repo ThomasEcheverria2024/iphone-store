@@ -1,0 +1,44 @@
+{
+  "admin": {
+    "username": "admin",
+    "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+  },
+  "products": [
+    {
+      "id": "ip-1",
+      "name": "iPhone 14",
+      "model": "14",
+      "color": "Azul",
+      "memory": "128 GB",
+      "condition": "Excelente",
+      "price": 699,
+      "stock": 3,
+      "status": "Disponible",
+      "image": "https://images.unsplash.com/photo-1672666635131-9d1d646ce21b?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "ip-2",
+      "name": "iPhone 13 Pro",
+      "model": "13 Pro",
+      "color": "Grafito",
+      "memory": "256 GB",
+      "condition": "Muy bueno",
+      "price": 849,
+      "stock": 2,
+      "status": "Disponible",
+      "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": "ip-3",
+      "name": "iPhone 12",
+      "model": "12",
+      "color": "Blanco",
+      "memory": "64 GB",
+      "condition": "Bueno",
+      "price": 499,
+      "stock": 0,
+      "status": "Sin stock",
+      "image": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80"
+    }
+  ]
+}

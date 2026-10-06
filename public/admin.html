@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-url" content="" />
+    <title>Panel admin - iPhone Stock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body {
+        background:
+          radial-gradient(circle at top left, rgba(117, 116, 255, 0.18), transparent 28%),
+          radial-gradient(circle at top right, rgba(93, 194, 255, 0.18), transparent 22%),
+          linear-gradient(180deg, #050816 0%, #020713 100%);
+        color: #edf4ff;
+      }
+
+      .admin-shell {
+        max-width: 1200px;
+        margin: 28px auto;
+        padding: 0 16px 48px;
+      }
+
+      .admin-panel {
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+        gap: 24px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(9, 14, 24, 0.9));
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 22px;
+        padding: 24px;
+        box-shadow: 0 28px 60px rgba(2, 6, 23, 0.7);
+      }
+
+      .login-box {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .login-box h2,
+      .manage-box h2 {
+        margin: 0;
+        color: #f8fbff;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .field-group label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #dfeeff;
+      }
+
+      .field-group input,
+      .field-group select {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font: inherit;
+        background: rgba(11, 18, 32, 0.8);
+        color: #f8fbff;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #d9b3ff, #5ab9ff, #7dd3fc);
+        color: #08111d;
+        font: inherit;
+        font-weight: 800;
+        padding: 12px 16px;
+        cursor: pointer;
+        box-shadow: 0 12px 25px rgba(124, 154, 255, 0.35);
+      }
+
+      button.secondary {
+        background: rgba(148, 163, 184, 0.12);
+        color: #edf4ff;
+        box-shadow: none;
+      }
+
+      button.danger {
+        background: linear-gradient(135deg, #ff7b8d, #ef4444);
+        color: white;
+      }
+
+      .alert {
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .alert.error {
+        background: rgba(255, 123, 141, 0.12);
+        color: #ffd5db;
+        border: 1px solid rgba(255, 123, 141, 0.2);
+        display: block;
+      }
+
+      .alert.success {
+        background: rgba(114, 242, 181, 0.12);
+        color: #d9ffef;
+        border: 1px solid rgba(114, 242, 181, 0.2);
+        display: block;
+      }
+
+      .products-admin-list {
+        display: grid;
+        gap: 16px;
+      }
+
+      .admin-product {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 18px;
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        background: rgba(11, 18, 32, 0.82);
+      }
+
+      .admin-product-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .admin-product h3 {
+        margin: 0;
+        color: #f5f9ff;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 820px) {
+        .admin-panel {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="logo">i</span>
+          <span>Panel administrador</span>
+        </div>
+        <nav>
+          <a href="/">Volver al catálogo</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <div id="login-screen" class="admin-panel">
+        <section class="card login-box">
+          <h2>Acceso admin</h2>
+          <div class="field-group">
+            <label for="username">Usuario</label>
+            <input id="username" type="text" placeholder="admin" />
+          </div>
+          <div class="field-group">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="admin123" />
+          </div>
+          <div id="loginMessage" class="alert"></div>
+          <div class="button-row">
+            <button id="loginBtn">Entrar</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Datos por defecto</h2>
+          <p>Usuario: <strong>admin</strong></p>
+          <p>Contraseña: <strong>admin123</strong></p>
+          <p>Desde aquí podrás cambiar la contraseña y gestionar el stock más adelante.</p>
+        </section>
+      </div>
+
+      <div id="admin-screen" class="admin-panel hidden">
+        <section class="card manage-box">
+          <h2>Añadir / editar equipo</h2>
+          <form id="productForm">
+            <div class="field-group">
+              <label for="name">Nombre</label>
+              <input id="name" name="name" type="text" required />
+            </div>
+            <div class="field-group">
+              <label for="model">Modelo</label>
+              <input id="model" name="model" type="text" required />
+            </div>
+            <div class="field-group">
+              <label for="color">Color</label>
+              <input id="color" name="color" type="text" />
+            </div>
+            <div class="field-group">
+              <label for="memory">Memoria</label>
+              <input id="memory" name="memory" type="text" />
+            </div>
+            <div class="field-group">
+              <label for="condition">Condición</label>
+              <input id="condition" name="condition" type="text" />
+            </div>
+            <div class="field-group">
+              <label for="price">Precio</label>
+              <input id="price" name="price" type="number" min="0" required />
+            </div>
+            <div class="field-group">
+              <label for="stock">Stock</label>
+              <input id="stock" name="stock" type="number" min="0" required />
+            </div>
+            <div class="field-group">
+              <label for="battery">Batería (%)</label>
+              <input id="battery" name="battery" type="number" min="0" max="100" value="85" />
+            </div>
+            <div class="field-group">
+              <label for="status">Estado</label>
+              <select id="status" name="status">
+                <option value="Disponible">Disponible</option>
+                <option value="En revisión">En revisión</option>
+                <option value="Sin stock">Sin stock</option>
+                <option value="Vendido">Vendido</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="image">Imagen URL</label>
+              <input id="image" name="image" type="url" />
+            </div>
+            <div id="formMessage" class="alert"></div>
+            <div class="button-row">
+              <button type="submit">Guardar equipo</button>
+              <button type="button" class="secondary" id="resetFormBtn">Cancelar edición</button>
+              <button type="button" class="secondary" id="logoutBtn">Cerrar sesión</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="admin-product-header">
+            <h2>Listado actual</h2>
+            <span id="adminUsername">Admin</span>
+          </div>
+          <div id="productsAdminList" class="products-admin-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-url" content="" />
+    <title>iPhone Stock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="logo">i</span>
+          <span>iPhone Stock</span>
+        </div>
+        <nav>
+          <a href="#catalogo">Catálogo</a>
+          <a href="/admin">Panel admin</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-content">
+          <div>
+            <p class="eyebrow">Equipos en stock</p>
+            <h1>iPhones revisados y listos para vender.</h1>
+            <p class="subtitle">Consulta el estado, la memoria, el color y la disponibilidad de cada terminal.</p>
+          </div>
+          <div class="hero-badge">
+            <strong id="total-products">0</strong>
+            <span>equipos disponibles</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="catalogo" class="catalogue container">
+        <div class="section-header">
+          <h2>Catálogo</h2>
+          <div class="status-legend">
+            <span><i class="dot green"></i> Disponible</span>
+            <span><i class="dot orange"></i> Revisión</span>
+            <span><i class="dot red"></i> Sin stock</span>
+          </div>
+        </div>
+
+        <div class="filters-panel">
+          <div class="filter-group">
+            <label for="modelFilter">Modelo</label>
+            <select id="modelFilter">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="memoryFilter">Capacidad</label>
+            <select id="memoryFilter">
+              <option value="all">Todas</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="batteryFilter">Batería</label>
+            <select id="batteryFilter">
+              <option value="all">Todas</option>
+              <option value="80">80% o más</option>
+              <option value="90">90% o más</option>
+              <option value="95">95% o más</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="products" class="products-grid"></div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
