@@ -263,7 +263,7 @@ nav a:hover {
 
 .product-card {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 14px;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(9, 14, 24, 0.9));
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -279,10 +279,15 @@ nav a:hover {
 }
 
 .product-image {
-  width: 102px;
-  height: 102px;
+  width: 132px;
+  min-width: 132px;
+  height: 100%;
+  min-height: 132px;
   object-fit: cover;
+  object-position: center;
   flex-shrink: 0;
+  display: block;
+  background: #0b1220;
   border-right: 1px solid rgba(148, 163, 184, 0.12);
 }
 
