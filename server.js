@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const DATA_DIR = process.env.DATA_DIR || path.join(os.tmpdir(), 'iphone-store-data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -64,17 +65,15 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+function secureEquals(value, expected) {
+  const valueHash = crypto.createHash('sha256').update(value).digest();
+  const expectedHash = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(valueHash, expectedHash);
 }
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_FILE)) {
     const initialData = {
-      admin: {
-        username: 'admin',
-        passwordHash: hashPassword('admin123')
-      },
       products: DEFAULT_PRODUCTS
     };
 
@@ -203,7 +202,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'iphone-store-secret',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -243,20 +242,26 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
 
-  if (!username || !password) {
+  if (typeof username !== 'string' || !username || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Usuario y contraseña son obligatorios.' });
   }
 
-  const store = readStore();
-  const validUser = store.admin.username === username;
-  const validPassword = store.admin.passwordHash === hashPassword(password);
+  const configuredUsername = process.env.ADMIN_USERNAME;
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+
+  if (!configuredUsername || !configuredPassword) {
+    return res.status(503).json({ error: 'El acceso administrador no está configurado.' });
+  }
+
+  const validUser = secureEquals(username, configuredUsername);
+  const validPassword = secureEquals(password, configuredPassword);
 
   if (!validUser || !validPassword) {
     return res.status(401).json({ error: 'Credenciales incorrectas.' });
   }
 
-  req.session.user = { username: store.admin.username };
-  res.json({ ok: true, username: store.admin.username });
+  req.session.user = { username: configuredUsername };
+  res.json({ ok: true, username: configuredUsername });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -418,7 +423,6 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Servidor arrancado en http://localhost:${PORT}`);
-    console.log('Credenciales admin por defecto: admin / admin123');
   });
 }
 

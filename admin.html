@@ -178,11 +178,11 @@
           <h2>Acceso admin</h2>
           <div class="field-group">
             <label for="username">Usuario</label>
-            <input id="username" type="text" placeholder="admin" />
+            <input id="username" type="text" autocomplete="username" />
           </div>
           <div class="field-group">
             <label for="password">Contraseña</label>
-            <input id="password" type="password" placeholder="admin123" />
+            <input id="password" type="password" autocomplete="current-password" />
           </div>
           <div id="loginMessage" class="alert"></div>
           <div class="button-row">
@@ -190,12 +190,6 @@
           </div>
         </section>
 
-        <section class="card">
-          <h2>Datos por defecto</h2>
-          <p>Usuario: <strong>admin</strong></p>
-          <p>Contraseña: <strong>admin123</strong></p>
-          <p>Desde aquí podrás cambiar la contraseña y gestionar el stock más adelante.</p>
-        </section>
       </div>
 
       <div id="admin-screen" class="admin-panel hidden">

@@ -24,10 +24,11 @@ La web quedará disponible en:
 - Catálogo público: http://localhost:3000/
 - Panel admin: http://localhost:3000/admin
 
-## Credenciales por defecto
+## Configuración de acceso admin
 
-- Usuario: admin
-- Contraseña: admin123
+Configura `ADMIN_USERNAME` y `ADMIN_PASSWORD` como variables privadas de entorno. En Render, agrégalas en **Environment**; no las guardes en el repositorio ni las compartas en el chat. El acceso admin queda deshabilitado hasta que ambas estén configuradas.
+
+Configura también `SESSION_SECRET` con un valor aleatorio largo para mantener las sesiones seguras entre reinicios. En Render, estas tres variables deben cargarse como secretos.
 
 ## Funcionalidades
 
