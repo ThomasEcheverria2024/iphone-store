@@ -30,12 +30,13 @@ Importa el repositorio en Vercel y configura estas variables en **Project → Se
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
-- `SUPABASE_ADMIN_EMAIL`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
 - `SESSION_SECRET` — genera un valor aleatorio largo.
 
-En Supabase, crea y confirma tu usuario desde **Authentication → Users**. Desactiva el registro público para que nadie más pueda crear una cuenta. El panel valida el correo y la contraseña con Supabase Auth y solo permite el correo indicado en `SUPABASE_ADMIN_EMAIL`. La sesión se guarda en una cookie firmada para funcionar con las funciones serverless de Vercel.
+El ingreso usa una única credencial privada configurada en Vercel y no requiere crear usuarios de Supabase Auth. Supabase sigue usándose para el inventario. La sesión se guarda en una cookie firmada para funcionar con las funciones serverless de Vercel.
 
-No agregues la contraseña al repositorio ni a las variables de Vercel; Supabase Auth la verifica durante el inicio de sesión.
+No agregues la contraseña al repositorio. Vercel la compara al iniciar sesión.
 
 ## Funcionalidades
 
