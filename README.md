@@ -28,12 +28,8 @@ La web quedará disponible en:
 
 Importa el repositorio en Vercel y configura estas variables en **Project → Settings → Environment Variables**:
 
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `SESSION_SECRET` — genera un valor aleatorio largo.
 
+Después de agregar o cambiar estas variables, crea un nuevo deployment de Production para que queden activas.
 El ingreso usa una única credencial privada configurada en Vercel y no requiere crear usuarios de Supabase Auth. Supabase sigue usándose para el inventario. La sesión se guarda en una cookie firmada para funcionar con las funciones serverless de Vercel.
 
 No agregues la contraseña al repositorio. Vercel la compara al iniciar sesión.
