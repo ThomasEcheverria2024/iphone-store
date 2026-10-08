@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -210,19 +210,15 @@ function normalizeProduct(product = {}, fallbackId = null) {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(
-  session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 1000 * 60 * 60 * 8
-    }
-  })
-);
+app.set('trust proxy', 1);
+app.use(cookieSession({
+  name: 'iphone-admin-session',
+  keys: [SESSION_SECRET],
+  maxAge: 1000 * 60 * 60 * 8,
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+}));
 
 function requireAdmin(req, res, next) {
   if (!req.session || !req.session.user) {
@@ -256,7 +252,7 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ error: 'Correo y contraseña son obligatorios.' });
   }
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_ADMIN_EMAIL) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_ADMIN_EMAIL || !process.env.SESSION_SECRET) {
     return res.status(503).json({ error: 'La autenticación de Supabase no está configurada.' });
   }
 
@@ -288,9 +284,8 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.json({ ok: true });
-  });
+  req.session = null;
+  res.json({ ok: true });
 });
 
 app.get('/api/admin/me', requireAdmin, (req, res) => {
