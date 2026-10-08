@@ -246,7 +246,9 @@ app.post('/api/login', async (req, res) => {
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminUsername || !adminPassword || !process.env.SESSION_SECRET) {
-    return res.status(503).json({ error: 'El acceso administrador no está configurado en Vercel.' });
+    return res.status(503).json({
+      error: 'Configura ADMIN_USERNAME, ADMIN_PASSWORD y SESSION_SECRET en Production de Vercel.',
+    });
   }
 
   const validUsername = secureEquals(username, adminUsername);
