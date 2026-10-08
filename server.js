@@ -123,7 +123,7 @@ function mergeProductsWithLocalOverrides(remoteProducts = [], localProducts = []
 
   for (const product of localList) {
     const productId = String(product.id);
-    if (!remoteList.some((item) => String(item.id) === productId)) {
+    if (product.localOnly === true && !remoteList.some((item) => String(item.id) === productId)) {
       merged.push(normalizeProduct(product, product.id));
     }
   }
@@ -140,10 +140,6 @@ async function syncLocalStoreFromSupabase() {
     const remoteProducts = await getProductsFromSupabase();
     const store = readStore();
     const localProducts = Array.isArray(store.products) ? store.products : [];
-
-    if (!Array.isArray(remoteProducts) || !remoteProducts.length) {
-      return store;
-    }
 
     store.products = mergeProductsWithLocalOverrides(remoteProducts, localProducts);
     saveStore(store);
@@ -171,7 +167,7 @@ async function getProducts() {
 
   try {
     const supabaseProducts = await getProductsFromSupabase();
-    if (Array.isArray(supabaseProducts) && supabaseProducts.length > 0) {
+    if (Array.isArray(supabaseProducts)) {
       return mergeProductsWithLocalOverrides(supabaseProducts, Array.isArray(store.products) ? store.products : []);
     }
   } catch (error) {
@@ -179,17 +175,6 @@ async function getProducts() {
   }
 
   return Array.isArray(store.products) ? store.products : [];
-}
-
-async function supabaseSupportsBattery() {
-  if (!supabase) return false;
-
-  try {
-    const products = await getProductsFromSupabase();
-    return Array.isArray(products) && products.some((product) => Object.prototype.hasOwnProperty.call(product, 'battery'));
-  } catch (error) {
-    return false;
-  }
 }
 
 function parseNumber(rawValue, fallback = 0) {
@@ -319,7 +304,7 @@ app.post('/api/admin/products', requireAdmin, async (req, res) => {
     image
   });
 
-  if (supabase && (await supabaseSupportsBattery())) {
+  if (supabase) {
     try {
       const { data, error } = await supabase.from('products').insert(product).select().single();
       if (error) throw error;
@@ -330,7 +315,7 @@ app.post('/api/admin/products', requireAdmin, async (req, res) => {
   }
 
   const store = readStore();
-  store.products.unshift(product);
+  store.products.unshift(supabase ? { ...product, localOnly: true } : product);
   saveStore(store);
   return res.status(201).json(product);
 });
@@ -347,7 +332,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
     productIndex = store.products.findIndex((item) => item.id === id);
   }
 
-  if (supabase && productIndex !== -1 && (await supabaseSupportsBattery())) {
+  if (supabase && productIndex !== -1) {
     try {
       const updatedProduct = normalizeProduct({
         id,
@@ -379,6 +364,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const product = store.products[productIndex];
   store.products[productIndex] = {
     ...product,
+    ...(supabase ? { localOnly: true } : {}),
     name: name || product.name,
     model: model || product.model,
     color: color || product.color,
@@ -406,19 +392,22 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
     productIndex = store.products.findIndex((item) => item.id === id);
   }
 
-  if (supabase && productIndex !== -1 && (await supabaseSupportsBattery())) {
+  if (productIndex === -1) {
+    return res.status(404).json({ error: 'Producto no encontrado.' });
+  }
+
+  if (supabase) {
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
+      store.products = store.products.filter((item) => item.id !== id);
+      saveStore(store);
       await syncLocalStoreFromSupabase();
       return res.json({ ok: true });
     } catch (error) {
-      console.warn('No se pudo borrar en Supabase, usando fallback local:', error.message);
+      console.warn('No se pudo borrar en Supabase:', error.message);
+      return res.status(502).json({ error: 'No se pudo eliminar el equipo del inventario remoto.' });
     }
-  }
-
-  if (productIndex === -1) {
-    return res.status(404).json({ error: 'Producto no encontrado.' });
   }
 
   store.products = store.products.filter((item) => item.id !== id);
@@ -434,3 +423,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+module.exports.mergeProductsWithLocalOverrides = mergeProductsWithLocalOverrides;
