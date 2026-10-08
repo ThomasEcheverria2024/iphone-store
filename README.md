@@ -24,11 +24,11 @@ La web quedará disponible en:
 - Catálogo público: http://localhost:3000/
 - Panel admin: http://localhost:3000/admin
 
-## Configuración de acceso admin
+## Acceso admin con Supabase Auth
 
-Configura `ADMIN_USERNAME` y `ADMIN_PASSWORD` como variables privadas de entorno. En Render, agrégalas en **Environment**; no las guardes en el repositorio ni las compartas en el chat. El acceso admin queda deshabilitado hasta que ambas estén configuradas.
+En Supabase, crea y confirma tu usuario desde **Authentication → Users**. Desactiva el registro público de usuarios para que nadie más pueda crear una cuenta. El panel valida el correo y la contraseña con Supabase Auth y solo permite el correo indicado en `SUPABASE_ADMIN_EMAIL`.
 
-Configura también `SESSION_SECRET` con un valor aleatorio largo para mantener las sesiones seguras entre reinicios. En Render, estas tres variables deben cargarse como secretos.
+En Render → **Environment**, configura `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_ADMIN_EMAIL` y `SESSION_SECRET`. `SESSION_SECRET` debe ser un valor aleatorio largo. Nunca agregues contraseñas al repositorio.
 
 ## Funcionalidades
 

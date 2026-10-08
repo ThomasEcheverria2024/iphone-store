@@ -8,9 +8,11 @@ services:
     envVars:
       - key: PORT
         value: 10000
-      - key: ADMIN_USERNAME
+      - key: SUPABASE_URL
         sync: false
-      - key: ADMIN_PASSWORD
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_ADMIN_EMAIL
         sync: false
       - key: SESSION_SECRET
         sync: false

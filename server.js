@@ -14,6 +14,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(os.tmpdir(), 'iphone-store-da
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_ADMIN_EMAIL = process.env.SUPABASE_ADMIN_EMAIL;
 const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
@@ -65,10 +66,19 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
-function secureEquals(value, expected) {
-  const valueHash = crypto.createHash('sha256').update(value).digest();
-  const expectedHash = crypto.createHash('sha256').update(expected).digest();
-  return crypto.timingSafeEqual(valueHash, expectedHash);
+function isAllowedAdminEmail(email, allowedEmail) {
+  return typeof email === 'string'
+    && typeof allowedEmail === 'string'
+    && email.toLowerCase() === allowedEmail.trim().toLowerCase();
+}
+
+async function verifyAdminCredentials(authClient, email, password, allowedEmail) {
+  const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+  if (error || !data.user || !isAllowedAdminEmail(data.user.email, allowedEmail)) {
+    return null;
+  }
+
+  return data.user;
 }
 
 function ensureDataFile() {
@@ -239,29 +249,42 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body || {};
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body || {};
 
-  if (typeof username !== 'string' || !username || typeof password !== 'string' || !password) {
-    return res.status(400).json({ error: 'Usuario y contraseña son obligatorios.' });
+  if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+    return res.status(400).json({ error: 'Correo y contraseña son obligatorios.' });
   }
 
-  const configuredUsername = process.env.ADMIN_USERNAME;
-  const configuredPassword = process.env.ADMIN_PASSWORD;
-
-  if (!configuredUsername || !configuredPassword) {
-    return res.status(503).json({ error: 'El acceso administrador no está configurado.' });
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_ADMIN_EMAIL) {
+    return res.status(503).json({ error: 'La autenticación de Supabase no está configurada.' });
   }
 
-  const validUser = secureEquals(username, configuredUsername);
-  const validPassword = secureEquals(password, configuredPassword);
-
-  if (!validUser || !validPassword) {
+  if (!isAllowedAdminEmail(email, SUPABASE_ADMIN_EMAIL)) {
     return res.status(401).json({ error: 'Credenciales incorrectas.' });
   }
 
-  req.session.user = { username: configuredUsername };
-  res.json({ ok: true, username: configuredUsername });
+  try {
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const user = await verifyAdminCredentials(
+      authClient,
+      email.trim().toLowerCase(),
+      password,
+      SUPABASE_ADMIN_EMAIL,
+    );
+
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales incorrectas.' });
+    }
+
+    req.session.user = { username: user.email };
+    return res.json({ ok: true, username: user.email });
+  } catch (error) {
+    console.warn('No se pudo verificar el acceso con Supabase Auth:', error.message);
+    return res.status(503).json({ error: 'No se pudo verificar el acceso. Intenta nuevamente.' });
+  }
 });
 
 app.post('/api/logout', (req, res) => {
@@ -428,3 +451,5 @@ if (require.main === module) {
 
 module.exports = app;
 module.exports.mergeProductsWithLocalOverrides = mergeProductsWithLocalOverrides;
+module.exports.isAllowedAdminEmail = isAllowedAdminEmail;
+module.exports.verifyAdminCredentials = verifyAdminCredentials;

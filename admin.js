@@ -11,7 +11,7 @@ function apiFetch(path, options = {}) {
   return fetch(`${API_BASE}${path}`, options);
 }
 const logoutBtn = document.getElementById('logoutBtn');
-const usernameInput = document.getElementById('username');
+const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const loginMessage = document.getElementById('loginMessage');
 const formMessage = document.getElementById('formMessage');
@@ -57,11 +57,11 @@ async function checkSession() {
 }
 
 async function login() {
-  const username = usernameInput.value.trim();
+  const email = emailInput.value.trim();
   const password = passwordInput.value;
 
-  if (!username || !password) {
-    showAlert(loginMessage, 'error', 'Usuario y contraseña son obligatorios.');
+  if (!email || !password) {
+    showAlert(loginMessage, 'error', 'Correo y contraseña son obligatorios.');
     return;
   }
 
@@ -69,7 +69,7 @@ async function login() {
     const response = await apiFetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     });
 
     const data = await response.json();
@@ -80,7 +80,7 @@ async function login() {
 
     adminUsername.textContent = data.username;
     clearAlert(loginMessage);
-    usernameInput.value = '';
+    emailInput.value = '';
     passwordInput.value = '';
     setAdminView(true);
     loadProductsAdmin();
